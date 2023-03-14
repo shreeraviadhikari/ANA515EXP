@@ -1,16 +1,38 @@
+---
+title: "ANA 515 Practicum"
+author: "Shree Ravi Adhikari"
+date: "2023-03-14"
+output:
+  md_document:
+    variant: gfm
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
 # Summary
 
-> This project aims to clean the data generated from grain.org about
-> sales of vast amounts of agricultural land in less developed
-> countries.
+> This project aims to clean the data generated from grain.org about sales of vast amounts of agricultural land in less developed countries.
+
 
 ## Installing Dependencies
 
 > Reading excel files in R requires `readxl` package which can easily be installed using `install.packages('readxl')`
 
+```{r install-dependencies, warning=FALSE, message=FALSE, echo=FALSE}
+install.packages("readxl", repos = "http://cran.us.r-project.org")
+```
+
+```{r import-libraries, warning=FALSE, message=FALSE, echo=FALSE}
+library(tidyverse)
+library(readxl)
+```
+
 ### Read and Save Dataset
 
-``` r
+```{r read-excel-files, warning=FALSE, message=FALSE, echo=TRUE}
+
 # Set working directory
 setwd("C:\\Users\\Shree\ Ravi\ Adhikari\\OneDrive\\Documents\\ANA515EXP")
 
@@ -20,20 +42,20 @@ page.one <- read_excel("grain.xlsx", sheet = "Sheet1")
 page.two <- read_excel("grain.xlsx", sheet = "Sheet2")
 ```
 
-``` r
+
+```{r merge-datasests, warning=FALSE, message=FALSE, echo=TRUE}
 # Using the R's command rbind, merge two datasets.
 
 dataframe <- rbind(page.one, page.two)
 dim(dataframe)
-```
 
-    ## [1] 416  10
+```
 
 ## Cleaning Data
 
 > There are values like `NA`, `--`, `---` treat them as `<NA>`
 
-``` r
+```{r clean-data, warning=FALSE, message=FALSE, echo=TRUE}
 df <- dataframe %>%
   mutate(across(where(is.character), ~na_if(., "---")))
 
@@ -42,11 +64,12 @@ df <- df %>%
 
 df <- df %>%
   mutate(across(where(is.character), ~na_if(., "NA")))
+
 ```
 
 ### Computing the Null Values in each column
+```{r null-values, warning=FALSE, message=FALSE, echo=TRUE}
 
-``` r
 # missing_data_count shall compute and store the number of missing values in each column 
 missing_data_count <- setNames(
   data.frame(matrix(ncol = 2, nrow = 0)), 
@@ -58,33 +81,17 @@ for (column in colnames(df)) {
   missing_data_count[nrow(missing_data_count) + 1, ] = c(column, missing)
   print(sprintf("%d missing values for %s", missing, column))
 }
-```
-
-    ## [1] "1 missing values for Landgrabbed"
-    ## [1] "0 missing values for Landgrabber"
-    ## [1] "2 missing values for Base"
-    ## [1] "11 missing values for Sector"
-    ## [1] "2 missing values for Hectares"
-    ## [1] "34 missing values for Production"
-    ## [1] "304 missing values for Projected investment"
-    ## [1] "11 missing values for Year"
-    ## [1] "0 missing values for Status of deal"
-    ## [1] "0 missing values for Summary"
-
-``` r
 # barplot of missing values
 
 ggplot(
   missing_data_count, 
   aes(x=Column, y = NullValues)) + 
   geom_bar(stat="identity")
+
 ```
 
-![](README_files/figure-gfm/null-values-1.png)<!-- -->
-
 ### Handling Invalid Characters
-
-``` r
+```{r invalid-characters, warning=FALSE, message=FALSE, echo=TRUE}
 # There are invalid characters like ", "\n", "\r" characters in column Landgrabber
 
 invalid_chars = "\"|\r|\n"
@@ -92,7 +99,7 @@ invalid_chars = "\"|\r|\n"
 df$Landgrabber <- gsub(pattern = invalid_chars, replacement = "", x = df$Landgrabber)
 ```
 
-``` r
+```{r drop-columns, warning=FALSE, message=FALSE, echo=TRUE}
 # create a copy of `status` column
 df$status <- df$`Status of deal`
 
@@ -109,7 +116,7 @@ names(df) <- tolower(names(df))
 
 ### Rename similar to single values
 
-``` r
+```{r merge-multiple-values, warning=FALSE, message=FALSE, echo=TRUE}
 # Fix status column
 
 # For Done, In process and their variant create a single value
@@ -140,11 +147,20 @@ df$status <- sapply(
 )
 ```
 
-![](README_files/figure-gfm/barplot-statuses-1.png)<!-- -->
+```{r barplot-statuses, warning=FALSE, message=FALSE, echo=FALSE}
+
+# barplot of statuses
+
+barplot(
+  table(
+    df$status
+  )
+)
+```
 
 # Export the final data to csv
 
-``` r
+```{r export-final-data, warning=FALSE, message=FALSE, echo=TRUE}
 # Finally export the dataframe to csv
 write.csv(df, "cleaned_data.csv", row.names=FALSE)
 ```
